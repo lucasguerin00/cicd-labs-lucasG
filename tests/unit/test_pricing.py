@@ -1,8 +1,10 @@
 """Tests unitaires des règles de prix (Atelier 1)."""
 
 from decimal import Decimal
+from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
 import pytest
+from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
 from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
