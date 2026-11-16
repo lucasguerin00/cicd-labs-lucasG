@@ -135,3 +135,28 @@ def test_livraison_offerte_seulement_apres_remise():
     q = quote(items, coupon="WELCOME10")
     assert q.shipping == Decimal("4.90")
     assert q.total == Decimal("53.32")
+
+# --- STUDENT15 : -15 %, sans minimum, non cumulable avec la remise volume (par ligne) ---
+def test_student15_sans_minimum():
+    # mug x2 = 25.00 -> -15 % = 3.75
+    q = quote([{"product_id": "mug", "qty": 2}], coupon="STUDENT15")
+    assert q.discount == Decimal("3.75")
+    assert q.total == Decimal("26.15")  # 25.00 - 3.75 + 4.90 de livraison
+
+
+def test_student15_pas_sur_ligne_avec_remise_volume():
+    # sticker x10 a déjà la remise volume (23.28) -> le coupon ne s'applique pas
+    q = quote([{"product_id": "sticker", "qty": 10}], coupon="STUDENT15")
+    assert q.discount == Decimal("0.00")
+    assert q.total == Decimal("28.18")  # 23.28 + 4.90
+
+
+def test_student15_panier_mixte():
+    # mug x2 (25.00, éligible) + sticker x10 (23.28, remise volume)
+    q = quote(
+        [{"product_id": "mug", "qty": 2}, {"product_id": "sticker", "qty": 10}],
+        coupon="STUDENT15",
+    )
+    assert q.subtotal == Decimal("48.28")
+    assert q.discount == Decimal("3.75")  # 15 % du mug uniquement
+    assert q.total == Decimal("49.43")  # 48.28 - 3.75 + 4.90
