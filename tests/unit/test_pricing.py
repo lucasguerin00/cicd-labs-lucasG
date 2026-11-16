@@ -1,15 +1,12 @@
-"""Tests unitaires des règles de prix — POINT DE DÉPART (Atelier 1).
-
-Complétez ce fichier : objectif >= 90 % de couverture sur minishop/pricing.py.
-"""
+"""Tests unitaires des règles de prix (Atelier 1)."""
 
 from decimal import Decimal
-from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
 import pytest
+
 from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
-from minishop.pricing import line_total, money, quote
+pytestmark = pytest.mark.unit
 
 pytestmark = pytest.mark.unit
 
@@ -103,3 +100,36 @@ def test_as_dict_panier_vide():
 def test_line_total_arrondi_demi_centime():
     # 0.25 x 10 = 2.50, -5 % = 2.375 -> 2.38 (HALF_UP), pas 2.37
     assert line_total(Decimal("0.25"), 10) == Decimal("2.38")
+
+def test_line_total_arrondi_demi_centime():
+    # 29.99 x 10 = 299.90, -5 % = 284.905 -> 284.91 (HALF_UP), le bug donne 284.90
+    assert line_total(Decimal("29.99"), 10) == Decimal("284.91")
+
+
+def test_produit_inconnu():
+    with pytest.raises(KeyError):
+        quote([{"product_id": "inconnu", "qty": 1}])
+
+
+def test_quote_remise_volume():
+    q = quote([{"product_id": "book", "qty": 10}])
+    assert q.subtotal == Decimal("284.91")
+    assert q.shipping == Decimal("0.00")
+    assert q.total == Decimal("284.91")
+
+
+def test_quote_coupon_welcome10_livraison_payante():
+    q = quote([{"product_id": "mug", "qty": 2}], coupon="welcome10")
+    assert q.subtotal == Decimal("25.00")
+    assert q.discount == Decimal("2.50")
+    assert q.shipping == Decimal("4.90")
+    assert q.total == Decimal("27.40")
+
+
+def test_livraison_offerte_seulement_apres_remise():
+    # sous-total 53.80 >= 50, mais après -10 % : 48.42 < 50 -> livraison payante
+    items = [{"product_id": "hoodie", "qty": 1}, {"product_id": "sticker", "qty": 4}]
+    assert quote(items).shipping == Decimal("0.00")
+    q = quote(items, coupon="WELCOME10")
+    assert q.shipping == Decimal("4.90")
+    assert q.total == Decimal("53.32")
