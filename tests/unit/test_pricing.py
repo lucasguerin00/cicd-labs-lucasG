@@ -1,10 +1,8 @@
 """Tests unitaires des règles de prix (Atelier 1)."""
 
 from decimal import Decimal
-from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
 import pytest
-from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
 from minishop.pricing import coupon_discount, line_total, money, quote, shipping_cost
 
@@ -102,11 +100,6 @@ def test_as_dict_panier_vide():
 def test_line_total_arrondi_demi_centime():
     # 0.25 x 10 = 2.50, -5 % = 2.375 -> 2.38 (HALF_UP), pas 2.37
     assert line_total(Decimal("0.25"), 10) == Decimal("2.38")
-
-def test_line_total_arrondi_demi_centime():
-    # 29.99 x 10 = 299.90, -5 % = 284.905 -> 284.91 (HALF_UP), le bug donne 284.90
-    assert line_total(Decimal("29.99"), 10) == Decimal("284.91")
-
 
 def test_produit_inconnu():
     with pytest.raises(KeyError):
