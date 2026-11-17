@@ -1,3 +1,4 @@
+import os
 """Règles de calcul du panier MiniShop.
 
 Règles métier (voir specs/pricing.feature) :
