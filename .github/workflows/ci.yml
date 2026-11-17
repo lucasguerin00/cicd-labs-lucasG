@@ -30,4 +30,46 @@ jobs:
             requirements.txt
             requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - run: pytest -n auto -m "unit or api"
+      - name: Tests et couverture
+        run: |
+          pytest -n auto -m "unit or api" \
+            --cov=minishop --cov-report=xml --cov-report=html \
+            --cov-fail-under=85 --junitxml=reports/junit.xml
+      - name: Résumé de couverture
+        if: always()
+        run: |
+          echo "### Couverture (Python ${{ matrix.python-version }})" >> "$GITHUB_STEP_SUMMARY"
+          coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-py${{ matrix.python-version }}
+          path: |
+            reports/
+            htmlcov/
+            coverage.xml
+
+  test-container:
+    needs: lint
+    runs-on: ubuntu-latest
+    container: python:3.12-slim
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -m "unit or api"
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t minishop:ci .
+      - run: docker run -d --name minishop -p 8000:8000 minishop:ci
+      - name: Smoke test /health
+        run: |
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:8000/health && exit 0
+            sleep 1
+          done
+          docker logs minishop
+          exit 1
